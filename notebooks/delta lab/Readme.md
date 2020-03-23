@@ -6,7 +6,7 @@ Import this scala notebook in Databricks as shown below
 
 
 # Import Notebook
-!(img1.png)
+![](img1.png)
 
 # Point to github url
-!(img2.png)
+![](img2.png)
