@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "workspaceName": {
+          "value": "databricks"
+        },
+        "pricingTier": {
+            "value": "premium"
+        },
+        "location": {
+            "value": "westus"
+        },
+        "customVirtualNetworkId": {
+            "value": "/subscriptions/3e0e14b3-7e28-4da7-97de-0f5cb324f030/resourceGroups/vnet/providers/Microsoft.Network/virtualNetworks/aks-vnet"
+        }        
+  }
+}

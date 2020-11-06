@@ -1,0 +1,354 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "nsgName": {
+      "defaultValue": "databricks-nsg",
+      "type": "string",
+      "metadata": {
+        "description": "The name of the network security group to create."
+      }
+    },
+    "pricingTier": {
+      "defaultValue": "premium",
+      "allowedValues": [
+        "trial",
+        "standard",
+        "premium"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "The pricing tier of workspace."
+      }
+    },
+    "privateSubnetCidr": {
+      "defaultValue": "10.179.0.0/18",
+      "type": "string",
+      "metadata": {
+        "description": "Cidr range for the private subnet."
+      }
+    },
+    "privateSubnetName": {
+      "defaultValue": "private-subnet",
+      "type": "string",
+      "metadata": {
+        "description": "The name of the private subnet to create."
+      }
+    },
+    "publicSubnetCidr": {
+      "defaultValue": "10.179.64.0/18",
+      "type": "string",
+      "metadata": {
+        "description": "Cidr range for the public subnet.."
+      }
+    },
+    "publicSubnetName": {
+      "defaultValue": "public-subnet",
+      "type": "string",
+      "metadata": {
+        "description": "The name of the public subnet to create."
+      }
+    },
+    "vnetCidr": {
+      "defaultValue": "10.179.0.0/16",
+      "type": "string",
+      "metadata": {
+        "description": "Cidr range for the vnet."
+      }
+    },
+    "vnetName": {
+      "defaultValue": "databricks-vnet",
+      "type": "string",
+      "metadata": {
+        "description": "The name of the virtual network to create."
+      }
+    },
+    "workspaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Azure Databricks workspace to create."
+      }
+    },
+    "vnetResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Azure Databricks workspace to create."
+      }
+    },
+    "networkSecurityGroups_apinsg_externalid": {
+        "defaultValue": "/subscriptions/3e0e14b3-7e28-4da7-97de-0f5cb324f030/resourceGroups/vnet/providers/Microsoft.Network/networkSecurityGroups/apinsg",
+        "type": "String"
+    },
+    "routeTables_routetofirewall_externalid": {
+        "defaultValue": "/subscriptions/3e0e14b3-7e28-4da7-97de-0f5cb324f030/resourceGroups/vnet/providers/Microsoft.Network/routeTables/routetofirewall",
+        "type": "String"
+    }
+  },
+  "variables": {
+        "managedResourceGroupName": "[concat('databricks-rg-', parameters('workspaceName'), '-', uniqueString(parameters('workspaceName'), resourceGroup().id))]",
+        "managedResourceGroupId": "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('managedResourceGroupName'))]",
+        "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]",
+        "vnetId": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+        
+  },
+  "resources": [
+    {
+      "apiVersion": "2020-05-01",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "location": "[parameters('location')]",
+      "name": "[parameters('nsgName')]",
+      "properties": {}
+    },
+    {
+        "apiVersion": "2018-04-01",
+        "type": "Microsoft.Databricks/workspaces",
+        "location": "[parameters('location')]",
+        "name": "[parameters('workspaceName')]",
+         "dependsOn": [
+            "[resourceId('Microsoft.Network/networkSecurityGroups/', parameters('nsgName'))]",
+            "nestedTemplate"
+        ],
+        "sku": {
+            "name": "[parameters('pricingTier')]"
+        },
+        "comments": "The managed resource group specified will be locked after deployment.",
+        "properties": {
+            "ManagedResourceGroupId": "[variables('managedResourceGroupId')]",
+            "parameters": {
+                "customVirtualNetworkId": {
+                    "value": "[resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+                },
+                "customPublicSubnetName": {
+                    "value": "[parameters('publicSubnetName')]"
+                },
+                "customPrivateSubnetName": {
+                    "value": "[parameters('privateSubnetName')]"
+                },
+                "enableNoPublicIp": {
+                        "value": true
+                }
+            }
+        }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "name": "nestedTemplate",
+      "resourceGroup": "[parameters('vnetResourceGroup')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups/', parameters('nsgName'))]"
+        ],
+      "properties": {
+      "mode": "Incremental",
+      "parameters": {},
+      "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {
+             
+          },
+          "resources": [
+          {
+            "apiVersion": "2020-05-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "location": "[parameters('location')]",
+            "name": "[parameters('vnetName')]",            
+            "properties": {
+                "addressSpace": {
+                "addressPrefixes": [
+                    "[parameters('vnetCidr')]"
+                ]
+                },
+                "subnets": [
+                {
+                    "name": "GatewaySubnet",
+                    "properties": {
+                        "addressPrefix": "10.1.0.192/28",
+                        "serviceEndpoints": [],
+                        "delegations": [],
+                        "privateEndpointNetworkPolicies": "Enabled",
+                        "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                },
+                {
+                    "name": "aci1",
+                    "properties": {
+                        "addressPrefix": "10.1.0.208/28",
+                        "serviceEndpoints": [],
+                        "delegations": [
+                            {
+                                "name": "Microsoft.ContainerInstance/containerGroups",
+                                "properties": {
+                                    "serviceName": "Microsoft.ContainerInstance/containerGroups"
+                                }
+                            }
+                        ],
+                        "privateEndpointNetworkPolicies": "Enabled",
+                        "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                },
+                {
+                    "name": "aks",
+                    "properties": {
+                        "addressPrefix": "10.1.0.0/26",
+                        "serviceEndpoints": [
+                            {
+                                "service": "Microsoft.Sql",
+                                "locations": [
+                                    "westus"
+                                ]
+                            },
+                            {
+                                "service": "Microsoft.Storage",
+                                "locations": [
+                                    "westus",
+                                    "eastus"
+                                ]
+                            }
+                        ],
+                        "delegations": [],
+                        "privateEndpointNetworkPolicies": "Disabled",
+                        "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                },
+                {
+                    "name": "aks2",
+                    "properties": {
+                        "addressPrefix": "10.1.4.0/24",
+                        "serviceEndpoints": [],
+                        "delegations": [],
+                        "privateEndpointNetworkPolicies": "Enabled",
+                        "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                },
+                {
+                    "name": "appgw",
+                    "properties": {
+                        "addressPrefix": "10.1.7.0/28",
+                        "serviceEndpoints": [],
+                        "delegations": [],
+                        "privateEndpointNetworkPolicies": "Enabled",
+                        "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                },
+                {
+                    "name": "AzureFirewallSubnet",
+                    "properties": {
+                        "addressPrefix": "10.1.0.64/26",
+                        "serviceEndpoints": [],
+                        "delegations": [],
+                        "privateEndpointNetworkPolicies": "Enabled",
+                        "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                },
+                {
+                    "name": "apim2",
+                    "properties": {
+                        "addressPrefix": "10.1.6.0/28",
+                        "networkSecurityGroup": {
+                            "id": "[parameters('networkSecurityGroups_apinsg_externalid')]"
+                        },
+                        "routeTable": {
+                            "id": "[parameters('routeTables_routetofirewall_externalid')]"
+                        },
+                        "serviceEndpoints": [],
+                        "delegations": [],
+                        "privateEndpointNetworkPolicies": "Enabled",
+                        "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                },
+                {
+                    "name": "apim",
+                    "properties": {
+                        "addressPrefix": "10.1.5.0/28",
+                        "networkSecurityGroup": {
+                            "id": "[parameters('networkSecurityGroups_apinsg_externalid')]"
+                        },
+                        "routeTable": {
+                            "id": "[parameters('routeTables_routetofirewall_externalid')]"
+                        },
+                        "serviceEndpoints": [
+                            {
+                                "service": "Microsoft.Sql",
+                                "locations": [
+                                    "westus"
+                                ]
+                            },
+                            {
+                                "service": "Microsoft.ServiceBus",
+                                "locations": [
+                                    "*"
+                                ]
+                            },
+                            {
+                                "service": "Microsoft.Storage",
+                                "locations": [
+                                    "westus",
+                                    "eastus"
+                                ]
+                            },
+                            {
+                                "service": "Microsoft.EventHub",
+                                "locations": [
+                                    "*"
+                                ]
+                            }
+                        ],
+                        "delegations": [],
+                        "privateEndpointNetworkPolicies": "Enabled",
+                        "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                },
+                {
+                    "name": "[parameters('publicSubnetName')]",
+                    "properties": {
+                    "addressPrefix": "[parameters('publicSubnetCidr')]",
+                    "networkSecurityGroup": {
+                        "id": "[variables('nsgId')]"
+                    },
+                    "delegations": [
+                        {
+                        "name": "databricks-del-public",
+                        "properties": {
+                            "serviceName": "Microsoft.Databricks/workspaces"
+                        }
+                        }
+                    ]
+                    }
+                },
+                {
+                    "name": "[parameters('privateSubnetName')]",
+                    "properties": {
+                    "addressPrefix": "[parameters('privateSubnetCidr')]",
+                    "networkSecurityGroup": {
+                        "id": "[variables('nsgId')]"
+                    },
+                    "delegations": [
+                        {
+                        "name": "databricks-del-private",
+                        "properties": {
+                            "serviceName": "Microsoft.Databricks/workspaces"
+                        }
+                        }
+                    ]
+                    }
+                }
+                ]
+            }
+            }
+          ]
+      }
+     
+      }
+    }
+    
+  ]
+}

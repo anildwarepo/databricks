@@ -1,0 +1,21 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+          "location": {
+              "value": "westus"
+          },
+          "vnetName": {
+              "value": "aks-vnet"
+          },
+          "vnetCidr":{
+            "value": "10.1.0.0/21"
+          },
+          "publicSubnetCidr":{
+            "value": "10.1.1.0/26"
+          },
+          "privateSubnetCidr":{
+              "value": "10.1.1.64/26"
+          }
+    }
+  }
