@@ -12,7 +12,7 @@
             "value": "westus"
         },
         "customVirtualNetworkId": {
-            "value": "/subscriptions/3e0e14b3-7e28-4da7-97de-0f5cb324f030/resourceGroups/vnet/providers/Microsoft.Network/virtualNetworks/aks-vnet"
+            "value": "/subscriptions/{subscriptionid}/resourceGroups/{resource-group-name}/providers/Microsoft.Network/virtualNetworks/{vnet name}"
         }        
   }
 }
