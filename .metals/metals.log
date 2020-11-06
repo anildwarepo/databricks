@@ -1,9 +1,0 @@
-2020.11.05 22:55:41 INFO  started: Metals version 0.9.4 in workspace 'C:\Users\anildwa\source\repos\databricks' for client vscode.
-2020.11.05 22:55:42 INFO  time: initialize in 0.46s
-2020.11.05 22:55:42 WARN  no build tool detected in workspace 'C:\Users\anildwa\source\repos\databricks'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. 
-2020.11.05 22:55:47 INFO  no build target: using presentation compiler with only scala-library
-2020.11.05 22:55:47 WARN  no build target for: C:\Users\anildwa\source\repos\databricks\notebooks\delta lab\Delta Lab - INTERACTIVE.scala
-Nov 05, 2020 11:40:35 PM org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
-INFO: Unsupported notification method: $/setTraceNotification
-Nov 06, 2020 12:11:21 AM org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
-INFO: Unsupported notification method: $/setTraceNotification
